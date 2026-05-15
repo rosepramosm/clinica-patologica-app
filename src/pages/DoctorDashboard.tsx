@@ -33,10 +33,10 @@ const DoctorDashboard = () => {
     setSelectedPatient(null);
 
     try {
-      // Buscar por cédula
+      // Buscar por cédula e incluir el precio del estudio
       const { data, error } = await supabase
         .from('patients')
-        .select('*')
+        .select('*, sample_types(name, price_usd)')
         .eq('patient_id_card', searchCode)
         .order('created_at', { ascending: false });
 
@@ -161,12 +161,29 @@ const DoctorDashboard = () => {
       {selectedPatient && (
         <div className="card" style={{ borderTop: '6px solid var(--primary)' }}>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h2 style={{ margin: 0, color: 'var(--primary)' }}>Paciente: {selectedPatient.patient_name}</h2>
               <div style={{ color: '#64748b', fontSize: '1.1rem', marginTop: '0.5rem' }}>
                 <strong>C.I:</strong> {selectedPatient.patient_id_card} &nbsp;|&nbsp; 
                 <strong>Muestra:</strong> <span style={{ color: '#166534', fontWeight: 'bold' }}>{selectedPatient.sample_code}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <span style={{ padding: '4px 10px', backgroundColor: '#e2e8f0', borderRadius: '4px', fontSize: '0.9rem', color: '#334155', fontWeight: 'bold' }}>
+                  💰 Estudio: ${Number(selectedPatient.sample_types?.price_usd || 0).toFixed(2)}
+                </span>
+                <span style={{ padding: '4px 10px', backgroundColor: '#dcfce7', borderRadius: '4px', fontSize: '0.9rem', color: '#166534', fontWeight: 'bold' }}>
+                  ✅ Abonado: ${Number(selectedPatient.total_paid_usd_equivalent || 0).toFixed(2)}
+                </span>
+                {Math.max(0, Number(selectedPatient.sample_types?.price_usd || 0) - Number(selectedPatient.total_paid_usd_equivalent || 0)) > 0 ? (
+                  <span style={{ padding: '4px 10px', backgroundColor: '#fef2f2', borderRadius: '4px', fontSize: '0.9rem', color: '#991b1b', fontWeight: 'bold' }}>
+                    ⚠️ Debe: ${Math.max(0, Number(selectedPatient.sample_types?.price_usd || 0) - Number(selectedPatient.total_paid_usd_equivalent || 0)).toFixed(2)}
+                  </span>
+                ) : (
+                  <span style={{ padding: '4px 10px', backgroundColor: '#dcfce7', borderRadius: '4px', fontSize: '0.9rem', color: '#166534', fontWeight: 'bold' }}>
+                    🎉 Sin Deudas
+                  </span>
+                )}
               </div>
             </div>
             
