@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Link, useLocation } from 'react-router-dom';
 import { Stethoscope, ClipboardList, LogOut, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';

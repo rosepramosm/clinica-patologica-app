@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { UserPlus, CheckCircle2, DollarSign, Calculator, Search, List, Plus } from 'lucide-react';
+import { UserPlus, CheckCircle2, DollarSign, Calculator, List } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);

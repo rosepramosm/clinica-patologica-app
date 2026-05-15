@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Settings as SettingsIcon, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Settings as SettingsIcon, Plus, Trash2 } from 'lucide-react';
 
 const SampleTypesConfig = () => {
   const [types, setTypes] = useState<any[]>([]);
