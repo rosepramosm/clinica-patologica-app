@@ -58,9 +58,9 @@ interface ResultPDFProps {
 
 const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
   // Fecha formateada DD/MM/YYYY
-  const date = patient?.created_at ? new Date(patient.created_at).toLocaleDateString('es-VE', {
+  const date = new Date().toLocaleDateString('es-VE', {
     day: '2-digit', month: '2-digit', year: 'numeric'
-  }) : new Date().toLocaleDateString('es-VE');
+  });
 
   return (
     <Document>

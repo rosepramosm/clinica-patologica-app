@@ -2,9 +2,9 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } fro
 import { saveAs } from 'file-saver';
 
 export const generateWordDocument = async (patient: any, formData: any) => {
-  const date = patient?.created_at ? new Date(patient.created_at).toLocaleDateString('es-VE', {
+  const date = new Date().toLocaleDateString('es-VE', {
     day: '2-digit', month: '2-digit', year: 'numeric'
-  }) : new Date().toLocaleDateString('es-VE');
+  });
 
   const doc = new Document({
     creator: "Clínica Patológica App",
