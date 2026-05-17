@@ -279,27 +279,41 @@ const DoctorDashboard = () => {
               </div>
             )}
 
-            <div style={{ width: '100%' }}>
+            <div style={{ width: '100%', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
               {isFormComplete ? (
-                <PDFDownloadLink
-                  document={
-                    <ResultPDF 
-                      patient={selectedPatient} 
-                      formData={formData}
-                    />
-                  }
-                  fileName={`Resultado_${selectedPatient.sample_code}_${selectedPatient.patient_name.replace(/\s+/g, '_')}.pdf`}
-                  className="btn btn-primary"
-                  style={{ width: '100%', fontSize: '1.3rem', padding: '1.2rem', textDecoration: 'none' }}
-                >
-                  {/* @ts-ignore */}
-                  {({ loading }) =>
-                    loading ? 'Generando Documento Oficial...' : <><Download size={24} /> Descargar PDF Oficial</>
-                  }
-                </PDFDownloadLink>
+                <>
+                  <PDFDownloadLink
+                    document={
+                      <ResultPDF 
+                        patient={selectedPatient} 
+                        formData={formData}
+                      />
+                    }
+                    fileName={`Resultado_${selectedPatient.sample_code}_${selectedPatient.patient_name.replace(/\s+/g, '_')}.pdf`}
+                    className="btn btn-primary"
+                    style={{ width: '100%', fontSize: '1.3rem', padding: '1.2rem', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}
+                  >
+                    {/* @ts-ignore */}
+                    {({ loading }) =>
+                      loading ? 'Generando Documento Oficial...' : <><Download size={24} /> Descargar PDF Oficial</>
+                    }
+                  </PDFDownloadLink>
+                  
+                  <button 
+                    onClick={() => {
+                      import('../utils/wordGenerator').then(module => {
+                        module.generateWordDocument(selectedPatient, formData);
+                      });
+                    }}
+                    className="btn"
+                    style={{ width: '100%', fontSize: '1.3rem', padding: '1.2rem', backgroundColor: '#2563eb', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}
+                  >
+                    <Download size={24} /> Descargar Word Oficial
+                  </button>
+                </>
               ) : (
                 <button className="btn btn-secondary" style={{ width: '100%' }} disabled>
-                  Llene los diagnósticos macro/micro para generar el PDF
+                  Llene los diagnósticos macro/micro para generar los documentos
                 </button>
               )}
             </div>
