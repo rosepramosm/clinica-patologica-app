@@ -112,10 +112,12 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         <View style={styles.section}>
           <Text style={styles.paragraph}>
             <Text style={styles.textBold}>RESUMEN CLÍNICO: </Text>
-            {formData.clinical_summary ? formData.clinical_summary.split('\n')[0] : 'No se proporcionan datos clínicos.'}
+            {formData.clinical_summary ? formData.clinical_summary.split('\n')[0].replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, (m: string) => '\u00A0'.repeat(m.length)).replace(/  +/g, (m: string) => '\u00A0'.repeat(m.length)) : 'No se proporcionan datos clínicos.'}
           </Text>
           {formData.clinical_summary && formData.clinical_summary.split('\n').slice(1).map((line: string, i: number) => (
-            <Text key={i} style={styles.paragraph}>{line}</Text>
+            <Text key={i} style={styles.paragraph}>
+              {line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length))}
+            </Text>
           ))}
         </View>
 
@@ -132,10 +134,12 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         <View style={styles.section}>
           <Text style={styles.paragraph}>
             <Text style={styles.textBold}>DIAGNÓSTICO MACROSCÓPICO: </Text>
-            {formData.macroscopic_diagnosis ? formData.macroscopic_diagnosis.split('\n')[0] : ''}
+            {formData.macroscopic_diagnosis ? formData.macroscopic_diagnosis.split('\n')[0].replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, (m: string) => '\u00A0'.repeat(m.length)).replace(/  +/g, (m: string) => '\u00A0'.repeat(m.length)) : ''}
           </Text>
           {formData.macroscopic_diagnosis && formData.macroscopic_diagnosis.split('\n').slice(1).map((line: string, i: number) => (
-            <Text key={i} style={styles.paragraph}>{line}</Text>
+            <Text key={i} style={styles.paragraph}>
+              {line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length))}
+            </Text>
           ))}
         </View>
         
@@ -146,7 +150,9 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
           <Text style={styles.textBold}>DIAGNÓSTICO MICROSCÓPICO</Text>
           <View style={{ marginTop: 5 }}>
             {formData.microscopic_diagnosis ? formData.microscopic_diagnosis.split('\n').map((line: string, i: number) => (
-              <Text key={i} style={styles.paragraph}>{line}</Text>
+              <Text key={i} style={styles.paragraph}>
+                {line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length))}
+              </Text>
             )) : <Text style={styles.paragraph}> </Text>}
           </View>
         </View>

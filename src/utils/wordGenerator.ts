@@ -83,7 +83,10 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ text: "RESUMEN CLÍNICO: ", bold: true }),
         ...(formData?.clinical_summary || 'No se proporcionan datos clínicos.')
           .split('\n')
-          .map((line: string, index: number) => new TextRun({ text: line, break: index > 0 ? 1 : 0 })),
+          .map((line: string, index: number) => {
+            const formattedLine = line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length));
+            return new TextRun({ text: formattedLine, break: index > 0 ? 1 : 0 });
+          }),
       ],
       spacing: { after: 200 },
       alignment: AlignmentType.JUSTIFIED,
@@ -103,7 +106,10 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ text: "DIAGNÓSTICO MACROSCÓPICO: ", bold: true }),
         ...(formData?.macroscopic_diagnosis || '')
           .split('\n')
-          .map((line: string, index: number) => new TextRun({ text: line, break: index > 0 ? 1 : 0 })),
+          .map((line: string, index: number) => {
+            const formattedLine = line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length));
+            return new TextRun({ text: formattedLine, break: index > 0 ? 1 : 0 });
+          }),
       ],
       spacing: { after: 400 },
       alignment: AlignmentType.JUSTIFIED,
@@ -120,7 +126,10 @@ export const generateWordDocument = async (patient: any, formData: any) => {
       children: [
         ...(formData?.microscopic_diagnosis || '')
           .split('\n')
-          .map((line: string, index: number) => new TextRun({ text: line, break: index > 0 ? 1 : 0 })),
+          .map((line: string, index: number) => {
+            const formattedLine = line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length));
+            return new TextRun({ text: formattedLine, break: index > 0 ? 1 : 0 });
+          }),
       ],
       spacing: { after: 600 },
       alignment: AlignmentType.JUSTIFIED,
