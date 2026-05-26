@@ -17,6 +17,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         width: 450,
         height: 103,
       },
+      type: "png"
     });
   } catch (error) {
     console.warn("Could not load logo for Word document:", error);
