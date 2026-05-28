@@ -7,6 +7,9 @@ const AdminDashboard = () => {
   const [success, setSuccess] = useState('');
   const [sampleTypes, setSampleTypes] = useState<any[]>([]);
   const [recentPatients, setRecentPatients] = useState<any[]>([]);
+  const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Tasa de cambio global para la pantalla (se puede editar)
   const [exchangeRate, setExchangeRate] = useState<number>(40);
@@ -69,6 +72,69 @@ const AdminDashboard = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  useEffect(() => {
+    if (!editingPatientId) return;
+    
+    const timeoutId = setTimeout(() => {
+      saveDataAutomatically();
+    }, 1500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData, exchangeRate]);
+
+  const saveDataAutomatically = async () => {
+    if (!editingPatientId) return;
+    setAutoSaving(true);
+    
+    const currentPaidEq = (parseFloat(formData.amount_usd) || 0) + (exchangeRate > 0 ? ((parseFloat(formData.amount_bs) || 0) / exchangeRate) : 0);
+    const sType = sampleTypes.find(t => t.id === formData.sample_type_id);
+    const pUsd = sType ? Number(sType.price_usd) : 0;
+    const isPaid = currentPaidEq >= pUsd - 0.05;
+
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .update({
+          patient_name: formData.patient_name,
+          patient_id_card: formData.patient_id_card,
+          payment_method: formData.payment_method,
+          received_by: formData.received_by,
+          sample_code: formData.sample_code.toUpperCase(),
+          sample_type_id: formData.sample_type_id,
+          amount_usd: parseFloat(formData.amount_usd) || 0,
+          amount_bs: parseFloat(formData.amount_bs) || 0,
+          total_paid_usd_equivalent: currentPaidEq,
+          status: isPaid ? 'Pagado' : 'Por Pagar'
+        })
+        .eq('id', editingPatientId);
+
+      if (error) throw error;
+      setLastSaved(new Date());
+      loadData();
+    } catch (err) {
+      console.error('Error auto-guardado:', err);
+    } finally {
+      setAutoSaving(false);
+    }
+  };
+
+  const handleEditPatient = (p: any) => {
+    setEditingPatientId(p.id);
+    setSuccess('');
+    setLastSaved(null);
+    setFormData({
+      patient_name: p.patient_name || '',
+      patient_id_card: p.patient_id_card || '',
+      payment_method: p.payment_method || 'Efectivo Divisas',
+      received_by: p.received_by || 'Yolanda',
+      sample_code: p.sample_code || '',
+      sample_type_id: p.sample_type_id || '',
+      amount_usd: (p.amount_usd || 0).toString(),
+      amount_bs: (p.amount_bs || 0).toString()
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,9 +256,9 @@ const AdminDashboard = () => {
       </div>
 
       <div className="card">
-        <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <UserPlus size={36} color="var(--primary)" />
-          Nuevo Ingreso de Recepción
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: editingPatientId ? '#d97706' : 'var(--primary)' }}>
+          <UserPlus size={36} color={editingPatientId ? '#d97706' : 'var(--primary)'} />
+          {editingPatientId ? `Editando Paciente: ${formData.patient_name}` : 'Nuevo Ingreso de Recepción'}
         </h1>
 
         {success && (
@@ -286,9 +352,37 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', fontSize: '1.3rem', padding: '1.2rem' }} disabled={loading}>
-              {loading ? 'Guardando...' : 'Registrar Ingreso'}
-            </button>
+            {editingPatientId ? (
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', flexWrap: 'wrap' }}>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setEditingPatientId(null);
+                    setFormData({ patient_name: '', patient_id_card: '', payment_method: 'Efectivo Divisas', received_by: 'Yolanda', sample_code: '', sample_type_id: sampleTypes.length > 0 ? sampleTypes[0].id : '', amount_usd: '', amount_bs: '' });
+                    setLastSaved(null);
+                  }}
+                  className="btn btn-secondary" 
+                  style={{ fontSize: '1.2rem', padding: '1rem' }}
+                >
+                  Cancelar Edición / Registrar Nuevo Ingreso
+                </button>
+                <div style={{ flex: 1, textAlign: 'right', minWidth: '300px' }}>
+                  {autoSaving ? (
+                    <span style={{ color: '#d97706', fontSize: '1.1rem', fontWeight: 'bold' }}>🔄 Guardando automáticamente...</span>
+                  ) : lastSaved ? (
+                    <span style={{ color: '#166534', fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px' }}>
+                      <CheckCircle2 size={20} /> Cambios autoguardados a las {lastSaved.toLocaleTimeString()}
+                    </span>
+                  ) : (
+                    <span style={{ color: '#64748b', fontSize: '1.1rem' }}>Edite cualquier campo para autoguardar...</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', fontSize: '1.3rem', padding: '1.2rem' }} disabled={loading}>
+                {loading ? 'Guardando...' : 'Registrar Nuevo Ingreso'}
+              </button>
+            )}
           </form>
         )}
       </div>
@@ -333,7 +427,14 @@ const AdminDashboard = () => {
                     {p.status}
                   </span>
                 </td>
-                <td style={{ padding: '1rem', textAlign: 'right' }}>
+                <td style={{ padding: '1rem', textAlign: 'right', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button 
+                    onClick={() => handleEditPatient(p)}
+                    className="btn btn-secondary" 
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' }}
+                  >
+                    ✏️ Editar
+                  </button>
                   {p.status === 'Por Pagar' && (
                     <button 
                       onClick={() => openAbonoModal(p)}
