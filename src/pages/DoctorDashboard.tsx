@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Search, FileText, Download, CheckCircle2, Save, Users } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -13,6 +13,8 @@ const DoctorDashboard = () => {
   const [loadingSave, setLoadingSave] = useState(false);
   const [errorSearch, setErrorSearch] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const [formData, setFormData] = useState({
     age: '',
@@ -33,14 +35,14 @@ const DoctorDashboard = () => {
     setSelectedPatient(null);
 
     try {
-      // Buscar por cédula e incluir el precio del estudio
+      // Buscar por cédula, nombre o código de muestra e incluir el precio del estudio
       const { data, error } = await supabase
         .from('patients')
         .select('*, sample_types(name, price_usd)')
-        .eq('patient_id_card', searchCode)
+        .or(`patient_id_card.ilike.%${searchCode}%,patient_name.ilike.%${searchCode}%,sample_code.ilike.%${searchCode}%`)
         .order('created_at', { ascending: false });
 
-      if (error || !data || data.length === 0) throw new Error('No se encontraron pacientes con esa cédula.');
+      if (error || !data || data.length === 0) throw new Error('No se encontraron resultados para la búsqueda.');
 
       setPatientList(data);
       
@@ -74,6 +76,46 @@ const DoctorDashboard = () => {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setSaveSuccess(false); // Si edita algo, se quita el mensaje de éxito de guardado
+  };
+
+  useEffect(() => {
+    if (!selectedPatient) return;
+    
+    const timeoutId = setTimeout(() => {
+      saveDataAutomatically();
+    }, 1500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData]);
+
+  const saveDataAutomatically = async () => {
+    if (!selectedPatient) return;
+    setAutoSaving(true);
+    
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .update({
+          age: formData.age,
+          origin: formData.origin,
+          referring_doctor: formData.referring_doctor,
+          sample_origin: formData.sample_origin,
+          clinical_summary: formData.clinical_summary,
+          clinical_diagnosis: formData.clinical_diagnosis,
+          macroscopic_diagnosis: formData.macroscopic_diagnosis,
+          microscopic_diagnosis: formData.microscopic_diagnosis
+        })
+        .eq('id', selectedPatient.id);
+
+      if (error) throw error;
+      setLastSaved(new Date());
+      // Actualizamos el objeto en memoria para el PDF
+      setSelectedPatient((prev: any) => ({ ...prev, ...formData }));
+    } catch (err) {
+      console.error('Error en autoguardado:', err);
+    } finally {
+      setAutoSaving(false);
+    }
   };
 
   const handleSaveProgress = async () => {
@@ -123,10 +165,10 @@ const DoctorDashboard = () => {
           <input 
             type="text" 
             className="form-input" 
-            placeholder="Cédula (Ej. V-12345678)..."
+            placeholder="Buscar por Cédula, Nombre o Código de Muestra..."
             value={searchCode}
             onChange={(e) => setSearchCode(e.target.value)}
-            style={{ flex: 1, fontSize: '1.5rem', letterSpacing: '1px' }}
+            style={{ flex: 1, fontSize: '1.2rem', letterSpacing: '0.5px' }}
             required
           />
           <button type="submit" className="btn btn-primary" disabled={loadingSearch}>
@@ -223,12 +265,12 @@ const DoctorDashboard = () => {
 
             <div className="form-group">
               <label className="form-label">Resumen Clínico</label>
-              <textarea name="clinical_summary" className="form-textarea" style={{ minHeight: '80px' }} placeholder="Paciente femenina de 46 años..." value={formData.clinical_summary} onChange={handleChange} />
+              <textarea name="clinical_summary" className="form-textarea" style={{ minHeight: '80px' }} placeholder="Paciente femenina de 46 años..." value={formData.clinical_summary} onChange={handleChange} spellCheck={true} />
             </div>
 
             <div className="form-group">
               <label className="form-label">Diagnóstico Clínico</label>
-              <input type="text" name="clinical_diagnosis" className="form-input" placeholder="Ej. Miomatosis uterina" value={formData.clinical_diagnosis} onChange={handleChange} />
+              <input type="text" name="clinical_diagnosis" className="form-input" placeholder="Ej. Miomatosis uterina" value={formData.clinical_diagnosis} onChange={handleChange} spellCheck={true} />
             </div>
           </div>
 
@@ -245,6 +287,7 @@ const DoctorDashboard = () => {
               placeholder="Describa el tamaño, color, textura..."
               value={formData.macroscopic_diagnosis}
               onChange={handleChange}
+              spellCheck={true}
               style={{ minHeight: '150px' }}
             />
           </div>
@@ -257,6 +300,7 @@ const DoctorDashboard = () => {
               placeholder="Describa los hallazgos microscópicos y conclusión..."
               value={formData.microscopic_diagnosis}
               onChange={handleChange}
+              spellCheck={true}
               style={{ minHeight: '200px', border: '2px solid #166534' }}
             />
           </div>
@@ -269,15 +313,22 @@ const DoctorDashboard = () => {
               disabled={loadingSave}
             >
               <Save size={20} />
-              {loadingSave ? 'Guardando...' : 'Guardar Progreso en BD'}
+              {loadingSave ? 'Guardando...' : 'Guardar Progreso Manualmente'}
             </button>
             
-            {saveSuccess && (
-              <div style={{ width: '100%', color: '#166534', fontWeight: 'bold', textAlign: 'center', margin: '0.5rem 0' }}>
-                <CheckCircle2 size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }} />
-                Progreso guardado correctamente. Ya puedes generar el PDF actualizado.
-              </div>
-            )}
+            <div style={{ width: '100%', textAlign: 'center', minHeight: '24px', margin: '0.5rem 0' }}>
+              {autoSaving ? (
+                <span style={{ color: '#64748b', fontSize: '1rem', fontWeight: 'bold' }}>🔄 Guardando automáticamente...</span>
+              ) : lastSaved ? (
+                <span style={{ color: '#166534', fontSize: '1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                  <CheckCircle2 size={18} /> Progreso autoguardado a las {lastSaved.toLocaleTimeString()}
+                </span>
+              ) : saveSuccess ? (
+                <span style={{ color: '#166534', fontSize: '1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                  <CheckCircle2 size={18} /> Guardado manual correcto.
+                </span>
+              ) : null}
+            </div>
 
             <div style={{ width: '100%', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
               {isFormComplete ? (
