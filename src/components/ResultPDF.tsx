@@ -1,5 +1,5 @@
-
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import Html from 'react-pdf-html';
 
 const styles = StyleSheet.create({
   page: {
@@ -110,15 +110,13 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
 
         {/* CLINICAL DATA */}
         <View style={styles.section}>
-          <Text style={styles.paragraph}>
-            <Text style={styles.textBold}>RESUMEN CLÍNICO: </Text>
-            {formData.clinical_summary ? formData.clinical_summary.split('\n')[0].replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, (m: string) => '\u00A0'.repeat(m.length)).replace(/  +/g, (m: string) => '\u00A0'.repeat(m.length)) : 'No se proporcionan datos clínicos.'}
-          </Text>
-          {formData.clinical_summary && formData.clinical_summary.split('\n').slice(1).map((line: string, i: number) => (
-            <Text key={i} style={styles.paragraph}>
-              {line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length))}
-            </Text>
-          ))}
+          <Text style={styles.textBold}>RESUMEN CLÍNICO: </Text>
+          <Html stylesheet={{ 
+            p: { fontSize: 11, lineHeight: 1.6, textAlign: 'justify', marginBottom: 5, fontFamily: 'Helvetica' },
+            strong: { fontFamily: 'Helvetica-Bold' } 
+          }}>
+            {formData.clinical_summary || '<p>No se proporcionan datos clínicos.</p>'}
+          </Html>
         </View>
 
         <View style={styles.section}>
@@ -132,15 +130,13 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
 
         {/* MACROSCOPIC */}
         <View style={styles.section}>
-          <Text style={styles.paragraph}>
-            <Text style={styles.textBold}>DIAGNÓSTICO MACROSCÓPICO: </Text>
-            {formData.macroscopic_diagnosis ? formData.macroscopic_diagnosis.split('\n')[0].replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, (m: string) => '\u00A0'.repeat(m.length)).replace(/  +/g, (m: string) => '\u00A0'.repeat(m.length)) : ''}
-          </Text>
-          {formData.macroscopic_diagnosis && formData.macroscopic_diagnosis.split('\n').slice(1).map((line: string, i: number) => (
-            <Text key={i} style={styles.paragraph}>
-              {line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length))}
-            </Text>
-          ))}
+          <Text style={styles.textBold}>DIAGNÓSTICO MACROSCÓPICO: </Text>
+          <Html stylesheet={{ 
+            p: { fontSize: 11, lineHeight: 1.6, textAlign: 'justify', marginBottom: 5, fontFamily: 'Helvetica' },
+            strong: { fontFamily: 'Helvetica-Bold' } 
+          }}>
+            {formData.macroscopic_diagnosis || '<p></p>'}
+          </Html>
         </View>
         
         <View style={styles.spacer}></View>
@@ -149,11 +145,12 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         <View style={styles.section}>
           <Text style={styles.textBold}>DIAGNÓSTICO MICROSCÓPICO</Text>
           <View style={{ marginTop: 5 }}>
-            {formData.microscopic_diagnosis ? formData.microscopic_diagnosis.split('\n').map((line: string, i: number) => (
-              <Text key={i} style={styles.paragraph}>
-                {line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length))}
-              </Text>
-            )) : <Text style={styles.paragraph}> </Text>}
+            <Html stylesheet={{ 
+              p: { fontSize: 11, lineHeight: 1.6, textAlign: 'justify', marginBottom: 5, fontFamily: 'Helvetica' },
+              strong: { fontFamily: 'Helvetica-Bold' } 
+            }}>
+              {formData.microscopic_diagnosis || '<p></p>'}
+            </Html>
           </View>
         </View>
 

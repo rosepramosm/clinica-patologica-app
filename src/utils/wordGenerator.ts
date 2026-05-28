@@ -1,6 +1,63 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
 
+const parseHtmlToTextRuns = (html: string) => {
+  if (!html) return [new TextRun({ text: '' })];
+  
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const textRuns: TextRun[] = [];
+  
+  let lastWasBreak = true;
+  
+  const processNode = (node: Node, options: any) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.textContent && node.textContent !== '') {
+        textRuns.push(new TextRun({
+          text: node.textContent,
+          bold: options.bold,
+          italics: options.italics,
+          underline: options.underline ? {} : undefined,
+          size: options.size, // size in half-points
+        }));
+        lastWasBreak = false;
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const el = node as HTMLElement;
+      const newOptions = { ...options };
+      
+      if (el.tagName === 'B' || el.tagName === 'STRONG') newOptions.bold = true;
+      if (el.tagName === 'I' || el.tagName === 'EM') newOptions.italics = true;
+      if (el.tagName === 'U') newOptions.underline = true;
+      
+      if (el.classList.contains('ql-size-small')) newOptions.size = 16;
+      if (el.classList.contains('ql-size-large')) newOptions.size = 32;
+      if (el.classList.contains('ql-size-huge')) newOptions.size = 48;
+      
+      if (el.tagName === 'P' || el.tagName === 'LI') {
+        if (textRuns.length > 0 && !lastWasBreak) {
+          textRuns.push(new TextRun({ break: 1 }));
+          lastWasBreak = true;
+        }
+        if (el.tagName === 'LI') {
+           textRuns.push(new TextRun({ text: "• " }));
+           lastWasBreak = false;
+        }
+      }
+      
+      if (el.tagName === 'BR') {
+        textRuns.push(new TextRun({ break: 1 }));
+        lastWasBreak = true;
+      }
+      
+      el.childNodes.forEach(child => processNode(child, newOptions));
+    }
+  };
+  
+  doc.body.childNodes.forEach(child => processNode(child, {}));
+  return textRuns.length > 0 ? textRuns : [new TextRun({ text: ' ' })];
+};
+
 export const generateWordDocument = async (patient: any, formData: any) => {
   const date = new Date().toLocaleDateString('es-VE', {
     day: '2-digit', month: '2-digit', year: 'numeric'
@@ -81,12 +138,8 @@ export const generateWordDocument = async (patient: any, formData: any) => {
     new Paragraph({
       children: [
         new TextRun({ text: "RESUMEN CLÍNICO: ", bold: true }),
-        ...(formData?.clinical_summary || 'No se proporcionan datos clínicos.')
-          .split('\n')
-          .map((line: string, index: number) => {
-            const formattedLine = line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length));
-            return new TextRun({ text: formattedLine, break: index > 0 ? 1 : 0 });
-          }),
+        new TextRun({ break: 1 }),
+        ...parseHtmlToTextRuns(formData?.clinical_summary || 'No se proporcionan datos clínicos.')
       ],
       spacing: { after: 200 },
       alignment: AlignmentType.JUSTIFIED,
@@ -104,12 +157,8 @@ export const generateWordDocument = async (patient: any, formData: any) => {
     new Paragraph({
       children: [
         new TextRun({ text: "DIAGNÓSTICO MACROSCÓPICO: ", bold: true }),
-        ...(formData?.macroscopic_diagnosis || '')
-          .split('\n')
-          .map((line: string, index: number) => {
-            const formattedLine = line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length));
-            return new TextRun({ text: formattedLine, break: index > 0 ? 1 : 0 });
-          }),
+        new TextRun({ break: 1 }),
+        ...parseHtmlToTextRuns(formData?.macroscopic_diagnosis || '')
       ],
       spacing: { after: 400 },
       alignment: AlignmentType.JUSTIFIED,
@@ -124,12 +173,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
     }),
     new Paragraph({
       children: [
-        ...(formData?.microscopic_diagnosis || '')
-          .split('\n')
-          .map((line: string, index: number) => {
-            const formattedLine = line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0').replace(/^ +/, m => '\u00A0'.repeat(m.length)).replace(/  +/g, m => '\u00A0'.repeat(m.length));
-            return new TextRun({ text: formattedLine, break: index > 0 ? 1 : 0 });
-          }),
+        ...parseHtmlToTextRuns(formData?.microscopic_diagnosis || '')
       ],
       spacing: { after: 600 },
       alignment: AlignmentType.JUSTIFIED,

@@ -3,6 +3,17 @@ import { supabase } from '../lib/supabase';
 import { Search, FileText, Download, CheckCircle2, Save, Users } from 'lucide-react';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import ResultPDF from '../components/ResultPDF';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+const quillModules = {
+  toolbar: [
+    [{ 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['clean']
+  ],
+};
 
 const DoctorDashboard = () => {
   const [searchCode, setSearchCode] = useState('');
@@ -265,7 +276,17 @@ const DoctorDashboard = () => {
 
             <div className="form-group">
               <label className="form-label">Resumen Clínico</label>
-              <textarea name="clinical_summary" className="form-textarea" style={{ minHeight: '80px' }} placeholder="Paciente femenina de 46 años..." value={formData.clinical_summary} onChange={handleChange} spellCheck={true} />
+              <ReactQuill 
+                theme="snow"
+                modules={quillModules}
+                value={formData.clinical_summary}
+                onChange={(content) => {
+                  setFormData(prev => ({ ...prev, clinical_summary: content }));
+                  setSaveSuccess(false);
+                }}
+                placeholder="Paciente femenina de 46 años..."
+                className="bg-white"
+              />
             </div>
 
             <div className="form-group">
@@ -281,27 +302,31 @@ const DoctorDashboard = () => {
 
           <div className="form-group">
             <label className="form-label">Diagnóstico Macroscópico</label>
-            <textarea 
-              name="macroscopic_diagnosis"
-              className="form-textarea" 
-              placeholder="Describa el tamaño, color, textura..."
+            <ReactQuill 
+              theme="snow"
+              modules={quillModules}
               value={formData.macroscopic_diagnosis}
-              onChange={handleChange}
-              spellCheck={true}
-              style={{ minHeight: '150px' }}
+              onChange={(content) => {
+                setFormData(prev => ({ ...prev, macroscopic_diagnosis: content }));
+                setSaveSuccess(false);
+              }}
+              placeholder="Describa el tamaño, color, textura..."
+              className="bg-white"
             />
           </div>
 
           <div className="form-group">
             <label className="form-label">Diagnóstico Microscópico (Final)</label>
-            <textarea 
-              name="microscopic_diagnosis"
-              className="form-textarea" 
-              placeholder="Describa los hallazgos microscópicos y conclusión..."
+            <ReactQuill 
+              theme="snow"
+              modules={quillModules}
               value={formData.microscopic_diagnosis}
-              onChange={handleChange}
-              spellCheck={true}
-              style={{ minHeight: '200px', border: '2px solid #166534' }}
+              onChange={(content) => {
+                setFormData(prev => ({ ...prev, microscopic_diagnosis: content }));
+                setSaveSuccess(false);
+              }}
+              placeholder="Describa los hallazgos microscópicos y conclusión..."
+              className="bg-white"
             />
           </div>
 
