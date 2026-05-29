@@ -87,7 +87,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
       new Paragraph({
         children: [logoImageRun],
         alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
+        spacing: { after: 150 },
       })
     );
   }
@@ -97,7 +97,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
       text: `BIOPSIA N°: ${patient?.sample_code || '---'}`,
       heading: HeadingLevel.HEADING_2,
       alignment: AlignmentType.CENTER,
-      spacing: { after: 400 },
+      spacing: { after: 150 },
     }),
     new Paragraph({
       children: [
@@ -108,7 +108,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ text: "FECHA: ", bold: true }),
         new TextRun({ text: date }),
       ],
-      spacing: { after: 200 },
+      spacing: { after: 80 },
     }),
     new Paragraph({
       children: [
@@ -117,21 +117,21 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ text: "EDAD: ", bold: true }),
         new TextRun({ text: `${formData?.age || '---'}` }),
       ],
-      spacing: { after: 200 },
+      spacing: { after: 80 },
     }),
     new Paragraph({
       children: [
         new TextRun({ text: "DR(a): ", bold: true }),
         new TextRun({ text: `${formData?.referring_doctor || '---'}` }),
       ],
-      spacing: { after: 200 },
+      spacing: { after: 80 },
     }),
     new Paragraph({
       children: [
         new TextRun({ text: "MUESTRA DE: ", bold: true }),
         new TextRun({ text: `${formData?.sample_origin || '---'}` }),
       ],
-      spacing: { after: 400 },
+      spacing: { after: 150 },
     }),
     
     // CLINICAL DATA
@@ -141,7 +141,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ break: 1 }),
         ...parseHtmlToTextRuns(formData?.clinical_summary || 'No se proporcionan datos clínicos.')
       ],
-      spacing: { after: 200 },
+      spacing: { after: 80 },
       alignment: AlignmentType.JUSTIFIED,
     }),
     new Paragraph({
@@ -149,7 +149,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ text: "DIAGNÓSTICO CLÍNICO: ", bold: true }),
         new TextRun({ text: formData?.clinical_diagnosis || 'No proporcionado.' }),
       ],
-      spacing: { after: 400 },
+      spacing: { after: 150 },
       alignment: AlignmentType.JUSTIFIED,
     }),
 
@@ -160,7 +160,7 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ break: 1 }),
         ...parseHtmlToTextRuns(formData?.macroscopic_diagnosis || '')
       ],
-      spacing: { after: 400 },
+      spacing: { after: 150 },
       alignment: AlignmentType.JUSTIFIED,
     }),
 
@@ -169,13 +169,13 @@ export const generateWordDocument = async (patient: any, formData: any) => {
       children: [
         new TextRun({ text: "DIAGNÓSTICO MICROSCÓPICO", bold: true }),
       ],
-      spacing: { after: 100 },
+      spacing: { after: 40 },
     }),
     new Paragraph({
       children: [
         ...parseHtmlToTextRuns(formData?.microscopic_diagnosis || '')
       ],
-      spacing: { after: 600 },
+      spacing: { after: 200 },
       alignment: AlignmentType.JUSTIFIED,
     }),
 
@@ -185,14 +185,14 @@ export const generateWordDocument = async (patient: any, formData: any) => {
         new TextRun({ text: "_________________________ " }),
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { before: 800, after: 100 },
+      spacing: { before: 300, after: 40 },
     }),
     new Paragraph({
       children: [
         new TextRun({ text: "Dr. Audin Ramos", bold: true }),
       ],
       alignment: AlignmentType.CENTER,
-      spacing: { after: 100 },
+      spacing: { after: 40 },
     }),
     new Paragraph({
       children: [
@@ -206,6 +206,22 @@ export const generateWordDocument = async (patient: any, formData: any) => {
     creator: "Clínica Patológica App",
     title: `Resultado Biopsia ${patient?.sample_code}`,
     description: "Resultado de Biopsia Generado por el Sistema",
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: "Arial",
+            size: 22, // 11pt
+          },
+          paragraph: {
+            spacing: {
+              line: 240, // 1.0 line spacing
+              after: 80,
+            },
+          },
+        },
+      },
+    },
     sections: [
       {
         properties: {
