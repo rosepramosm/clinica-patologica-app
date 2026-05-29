@@ -1,31 +1,28 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
 
-const parseHtmlToTextRuns = (html: string) => {
-  if (!html) return [new TextRun({ text: '' })];
+const parseHtmlToParagraphs = (html: string) => {
+  if (!html) return [new Paragraph({ children: [new TextRun('')] })];
   
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-  const textRuns: TextRun[] = [];
+  const paragraphs: Paragraph[] = [];
   
-  let lastWasBreak = true;
-  
-  const processNode = (node: Node, options: any) => {
+  const extractRuns = (node: Node, options: any): TextRun[] => {
+    let runs: TextRun[] = [];
     if (node.nodeType === Node.TEXT_NODE) {
-      if (node.textContent && node.textContent !== '') {
-        textRuns.push(new TextRun({
+      if (node.textContent) {
+        runs.push(new TextRun({
           text: node.textContent,
           bold: options.bold,
           italics: options.italics,
           underline: options.underline ? {} : undefined,
-          size: options.size, // size in half-points
+          size: options.size || 22, // 11pt default
         }));
-        lastWasBreak = false;
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as HTMLElement;
       const newOptions = { ...options };
-      
       if (el.tagName === 'B' || el.tagName === 'STRONG') newOptions.bold = true;
       if (el.tagName === 'I' || el.tagName === 'EM') newOptions.italics = true;
       if (el.tagName === 'U') newOptions.underline = true;
@@ -34,28 +31,86 @@ const parseHtmlToTextRuns = (html: string) => {
       if (el.classList.contains('ql-size-large')) newOptions.size = 32;
       if (el.classList.contains('ql-size-huge')) newOptions.size = 48;
       
-      if (el.tagName === 'P' || el.tagName === 'LI') {
-        if (textRuns.length > 0 && !lastWasBreak) {
-          textRuns.push(new TextRun({ break: 1 }));
-          lastWasBreak = true;
-        }
-        if (el.tagName === 'LI') {
-           textRuns.push(new TextRun({ text: "• " }));
-           lastWasBreak = false;
-        }
-      }
-      
       if (el.tagName === 'BR') {
-        textRuns.push(new TextRun({ break: 1 }));
-        lastWasBreak = true;
+        runs.push(new TextRun({ break: 1 }));
       }
       
-      el.childNodes.forEach(child => processNode(child, newOptions));
+      el.childNodes.forEach(child => {
+        runs = runs.concat(extractRuns(child, newOptions));
+      });
     }
+    return runs;
   };
+
+  const processBlockElement = (el: HTMLElement) => {
+    const runs = extractRuns(el, {});
+    
+    // Determine indentation: 1 tab unit in docx is about 360 dxa
+    let indent: any = undefined;
+    for (let i = 1; i <= 8; i++) {
+      if (el.classList.contains(`ql-indent-${i}`)) {
+        indent = { left: i * 360 };
+        break;
+      }
+    }
+    
+    if (el.tagName === 'LI') {
+      runs.unshift(new TextRun({ text: "•  ", bold: true }));
+      if (!indent) {
+        indent = { left: 360 };
+      }
+    }
+    
+    paragraphs.push(new Paragraph({
+      children: runs.length > 0 ? runs : [new TextRun('')],
+      alignment: AlignmentType.JUSTIFIED,
+      indent: indent,
+      spacing: { after: 80 },
+    }));
+  };
+
+  let inlineGroup: Node[] = [];
   
-  doc.body.childNodes.forEach(child => processNode(child, {}));
-  return textRuns.length > 0 ? textRuns : [new TextRun({ text: ' ' })];
+  const flushInlineGroup = () => {
+    if (inlineGroup.length === 0) return;
+    let runs: TextRun[] = [];
+    inlineGroup.forEach(node => {
+      runs = runs.concat(extractRuns(node, {}));
+    });
+    paragraphs.push(new Paragraph({
+      children: runs.length > 0 ? runs : [new TextRun('')],
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 80 },
+    }));
+    inlineGroup = [];
+  };
+
+  doc.body.childNodes.forEach(child => {
+    if (child.nodeType === Node.ELEMENT_NODE) {
+      const el = child as HTMLElement;
+      const isBlock = ['P', 'LI', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL'].includes(el.tagName);
+      if (isBlock) {
+        flushInlineGroup();
+        if (el.tagName === 'UL' || el.tagName === 'OL') {
+          el.childNodes.forEach(li => {
+            if (li.nodeType === Node.ELEMENT_NODE && (li as HTMLElement).tagName === 'LI') {
+              processBlockElement(li as HTMLElement);
+            }
+          });
+        } else {
+          processBlockElement(el);
+        }
+      } else {
+        inlineGroup.push(child);
+      }
+    } else {
+      inlineGroup.push(child);
+    }
+  });
+  
+  flushInlineGroup();
+  
+  return paragraphs.length > 0 ? paragraphs : [new Paragraph({ children: [new TextRun('')] })];
 };
 
 export const generateWordDocument = async (patient: any, formData: any) => {
@@ -137,47 +192,38 @@ export const generateWordDocument = async (patient: any, formData: any) => {
     // CLINICAL DATA
     new Paragraph({
       children: [
-        new TextRun({ text: "RESUMEN CLÍNICO: ", bold: true }),
-        new TextRun({ break: 1 }),
-        ...parseHtmlToTextRuns(formData?.clinical_summary || 'No se proporcionan datos clínicos.')
+        new TextRun({ text: "RESUMEN CLÍNICO: ", bold: true })
       ],
-      spacing: { after: 80 },
-      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 80, after: 40 },
     }),
+    ...parseHtmlToParagraphs(formData?.clinical_summary || 'No se proporcionan datos clínicos.'),
+    
     new Paragraph({
       children: [
         new TextRun({ text: "DIAGNÓSTICO CLÍNICO: ", bold: true }),
         new TextRun({ text: formData?.clinical_diagnosis || 'No proporcionado.' }),
       ],
-      spacing: { after: 150 },
+      spacing: { before: 80, after: 150 },
       alignment: AlignmentType.JUSTIFIED,
     }),
 
     // MACROSCOPIC
     new Paragraph({
       children: [
-        new TextRun({ text: "DIAGNÓSTICO MACROSCÓPICO: ", bold: true }),
-        new TextRun({ break: 1 }),
-        ...parseHtmlToTextRuns(formData?.macroscopic_diagnosis || '')
+        new TextRun({ text: "DIAGNÓSTICO MACROSCÓPICO: ", bold: true })
       ],
-      spacing: { after: 150 },
-      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 80, after: 40 },
     }),
+    ...parseHtmlToParagraphs(formData?.macroscopic_diagnosis || ''),
 
     // MICROSCOPIC
     new Paragraph({
       children: [
         new TextRun({ text: "DIAGNÓSTICO MICROSCÓPICO", bold: true }),
       ],
-      spacing: { after: 40 },
+      spacing: { before: 80, after: 40 },
     }),
-    new Paragraph({
-      children: [
-        ...parseHtmlToTextRuns(formData?.microscopic_diagnosis || '')
-      ],
-      spacing: { after: 200 },
-      alignment: AlignmentType.JUSTIFIED,
-    }),
+    ...parseHtmlToParagraphs(formData?.microscopic_diagnosis || ''),
 
     // SIGNATURE
     new Paragraph({

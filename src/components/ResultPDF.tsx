@@ -51,6 +51,26 @@ const styles = StyleSheet.create({
   }
 });
 
+const htmlStylesheet: any = {
+  p: { fontSize: 11, lineHeight: 1.1, textAlign: 'justify', marginTop: 0, marginBottom: 2, fontFamily: 'Helvetica' },
+  li: { fontSize: 11, lineHeight: 1.1, marginTop: 0, marginBottom: 2, fontFamily: 'Helvetica' },
+  strong: { fontFamily: 'Helvetica-Bold' },
+  '.ql-indent-1': { paddingLeft: 15 },
+  '.ql-indent-2': { paddingLeft: 30 },
+  '.ql-indent-3': { paddingLeft: 45 },
+  '.ql-indent-4': { paddingLeft: 60 },
+  '.ql-indent-5': { paddingLeft: 75 },
+  '.ql-indent-6': { paddingLeft: 90 },
+  '.ql-indent-7': { paddingLeft: 105 },
+  '.ql-indent-8': { paddingLeft: 120 },
+};
+
+const microscopicHtmlStylesheet: any = {
+  ...htmlStylesheet,
+  p: { ...htmlStylesheet.p, lineHeight: 1.05, marginBottom: 1 },
+  li: { ...htmlStylesheet.li, lineHeight: 1.05, marginBottom: 1 },
+};
+
 interface ResultPDFProps {
   patient: any;
   formData: any;
@@ -111,10 +131,7 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         {/* CLINICAL DATA */}
         <View style={styles.section}>
           <Text style={styles.textBold}>RESUMEN CLÍNICO: </Text>
-          <Html stylesheet={{ 
-            p: { fontSize: 11, lineHeight: 1.1, textAlign: 'justify', marginTop: 0, marginBottom: 2, fontFamily: 'Helvetica' },
-            strong: { fontFamily: 'Helvetica-Bold' } 
-          }}>
+          <Html stylesheet={htmlStylesheet}>
             {formData.clinical_summary || '<p>No se proporcionan datos clínicos.</p>'}
           </Html>
         </View>
@@ -131,10 +148,7 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         {/* MACROSCOPIC */}
         <View style={styles.section}>
           <Text style={styles.textBold}>DIAGNÓSTICO MACROSCÓPICO: </Text>
-          <Html stylesheet={{ 
-            p: { fontSize: 11, lineHeight: 1.1, textAlign: 'justify', marginTop: 0, marginBottom: 2, fontFamily: 'Helvetica' },
-            strong: { fontFamily: 'Helvetica-Bold' } 
-          }}>
+          <Html stylesheet={htmlStylesheet}>
             {formData.macroscopic_diagnosis || '<p></p>'}
           </Html>
         </View>
@@ -145,10 +159,7 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         <View style={styles.section}>
           <Text style={styles.textBold}>DIAGNÓSTICO MICROSCÓPICO</Text>
           <View style={{ marginTop: 2 }}>
-            <Html stylesheet={{ 
-              p: { fontSize: 11, lineHeight: 1.05, textAlign: 'justify', marginTop: 0, marginBottom: 1, fontFamily: 'Helvetica' },
-              strong: { fontFamily: 'Helvetica-Bold' } 
-            }}>
+            <Html stylesheet={microscopicHtmlStylesheet}>
               {formData.microscopic_diagnosis || '<p></p>'}
             </Html>
           </View>
