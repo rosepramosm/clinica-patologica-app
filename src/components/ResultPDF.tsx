@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     fontSize: 11,
-    lineHeight: 1.6,
+    lineHeight: 1.3,
     color: '#000000',
     textAlign: 'justify'
   },
@@ -112,7 +112,7 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         <View style={styles.section}>
           <Text style={styles.textBold}>RESUMEN CLÍNICO: </Text>
           <Html stylesheet={{ 
-            p: { fontSize: 11, lineHeight: 1.6, textAlign: 'justify', marginBottom: 5, fontFamily: 'Helvetica' },
+            p: { fontSize: 11, lineHeight: 1.3, textAlign: 'justify', marginBottom: 4, fontFamily: 'Helvetica' },
             strong: { fontFamily: 'Helvetica-Bold' } 
           }}>
             {formData.clinical_summary || '<p>No se proporcionan datos clínicos.</p>'}
@@ -132,7 +132,7 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         <View style={styles.section}>
           <Text style={styles.textBold}>DIAGNÓSTICO MACROSCÓPICO: </Text>
           <Html stylesheet={{ 
-            p: { fontSize: 11, lineHeight: 1.6, textAlign: 'justify', marginBottom: 5, fontFamily: 'Helvetica' },
+            p: { fontSize: 11, lineHeight: 1.3, textAlign: 'justify', marginBottom: 4, fontFamily: 'Helvetica' },
             strong: { fontFamily: 'Helvetica-Bold' } 
           }}>
             {formData.macroscopic_diagnosis || '<p></p>'}
@@ -144,9 +144,9 @@ const ResultPDF = ({ patient, formData }: ResultPDFProps) => {
         {/* MICROSCOPIC */}
         <View style={styles.section}>
           <Text style={styles.textBold}>DIAGNÓSTICO MICROSCÓPICO</Text>
-          <View style={{ marginTop: 5 }}>
+          <View style={{ marginTop: 3 }}>
             <Html stylesheet={{ 
-              p: { fontSize: 11, lineHeight: 1.6, textAlign: 'justify', marginBottom: 5, fontFamily: 'Helvetica' },
+              p: { fontSize: 11, lineHeight: 1.2, textAlign: 'justify', marginBottom: 3, fontFamily: 'Helvetica' },
               strong: { fontFamily: 'Helvetica-Bold' } 
             }}>
               {formData.microscopic_diagnosis || '<p></p>'}
